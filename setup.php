@@ -27,7 +27,7 @@
  --------------------------------------------------------------------------
  */
 
-define('PLUGIN_MORETICKET_VERSION', '1.6.1');
+define('PLUGIN_MORETICKET_VERSION', '1.6.2');
 
 if (!defined("PLUGIN_MORETICKET_DIR")) {
    define("PLUGIN_MORETICKET_DIR", Plugin::getPhpDir("moreticket"));
