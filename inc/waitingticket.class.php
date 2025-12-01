@@ -45,7 +45,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
      * Have I the global right to "create" the Object
      * May be overloaded if needed (ex KnowbaseItem)
      *
-     * @return booleen
+     * @return bool
      **/
     static function canCreate()
     {
@@ -60,7 +60,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
      * functions mandatory
      * getTypeName(), canCreate(), canView()
      * @param int $nb
-     * @return string|translated
+     * @return string
      */
     public static function getTypeName($nb = 0)
     {
@@ -205,7 +205,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
      *     - target filename : where to go when done.
      *     - withtemplate boolean : template or basic item
      *
-     * @return Nothing (display)
+     * @return bool (display)
      * */
     function showForm($ID, $options = [])
     {
@@ -277,6 +277,8 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
         echo "</td></tr>";
         echo "</table>";
         echo "</div>";
+
+        return true;
     }
 
     /**
@@ -287,7 +289,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
      *     - target filename : where to go when done.
      *     - withtemplate boolean : template or basic item
      *
-     * @return Nothing (display)
+     * @return bool (display)
      * */
     function showFormTicketTask($ID, $options = [])
     {
@@ -359,13 +361,15 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
         echo "</td></tr>";
         echo "</table>";
         echo "</div>";
+
+        return true;
     }
 
     /**
      * Print the wainting ticket form
      *
      * @param $item
-     * @return Nothing
+     * @return bool
      * @internal param int $ID ID of the item
      * @internal param array $options - target filename : where to go when done.*     - target filename : where to go when done.
      *     - withtemplate boolean : template or basic item
@@ -398,7 +402,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
             echo "<tr><th>" . __('No historical') . "</th></tr>";
             echo "</table>";
             echo "</div><br>";
-            return;
+            return true;
         } else {
             echo "<div class='center'>";
             // Display the pager
@@ -450,6 +454,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
             echo "</div>";
             Html::printAjaxPager(__('Ticket suspension history', 'moreticket'), $start, $number);
         }
+        return true;
     }
 
     /**
@@ -828,7 +833,6 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
                 return [
                     'description' => __("End of standby ticket", 'moreticket')
                 ];   // Optional
-                break;
         }
         return [];
     }
@@ -842,7 +846,7 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
      *     - target filename : where to go when done.
      *     - withtemplate boolean : template or basic item
      *
-     * @return Nothing (display)
+     * @return bool (display)
      * */
     function showQuestionSign($ID, $options = [])
     {
@@ -895,6 +899,8 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
         echo "</table>";
         echo "<div id='fakeupdate'></div>";
         echo "</div>";
+
+        return true;
     }
 
     function showSwitchField($name, $value)
@@ -976,6 +982,8 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
 
         $config = new PluginMoreticketConfig();
 
+        require_once GLPI_ROOT . "/src/twig/twig.utils.php";
+
         echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket' style='display:none;'>";
         echo "<div class='card mt-2 mb-2'>";
         echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
@@ -983,41 +991,61 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
         echo "<div class='row'>";
 
         // Reason field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+        $reasonLabel = __('Reason', 'moreticket');
         if ($config->mandatoryWaitingReason() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $reasonLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-        echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $reasonLabel,
+            'input' => [
+                'type' => 'text',
+                'name' => 'reason',
+                'value' => Html::cleanInputText($this->fields['reason'] ?? ''),
+                'col_lg' => 4,
+                'col_md' => 6,
+            ]
+        ]);
 
         // Waiting Type field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+        $waitingTypeLabel = PluginMoreticketWaitingType::getTypeName(1);
         if ($config->mandatoryWaitingType() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $waitingTypeLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
-        Dropdown::show('PluginMoreticketWaitingType', $opt);
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $waitingTypeLabel,
+            'input' => [
+                'type' => 'select',
+                'name' => 'plugin_moreticket_waitingtypes_id',
+                'values' => [Dropdown::EMPTY_VALUE] + getOptionForItems(PluginMoreticketWaitingType::class),
+                'value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0,
+                'noLib' => true,
+                'col_lg' => 4,
+                'col_md' => 6,
+                'actions' => getItemActionButtons(['info', 'add'], PluginMoreticketWaitingType::class),
+            ]
+        ]);
 
         // Postponement date field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+        $dateLabel = __('Postponement date', 'moreticket');
         if ($config->mandatoryReportDate() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $dateLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
         $date_value = $this->fields['date_report'] ?? '';
         if (empty($date_value) || $date_value == 'NULL') {
             $date_value = date("Y-m-d\\TH:i");
         } else {
             $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
         }
-        echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $dateLabel,
+            'input' => [
+                'type' => 'datetime-local',
+                'name' => 'date_report',
+                'value' => $date_value,
+                'col_lg' => 4,
+                'col_md' => 6,
+            ]
+        ]);
 
         echo "</div>"; // .row
         echo "</div>"; // .card-body
@@ -1070,6 +1098,8 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
 
         $config = new PluginMoreticketConfig();
 
+        require_once GLPI_ROOT . "/src/twig/twig.utils.php";
+
         echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket_followup' style='display:none;'>";
         echo "<div class='card mt-2 mb-2'>";
         echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
@@ -1077,41 +1107,61 @@ class PluginMoreticketWaitingTicket extends CommonDBTM
         echo "<div class='row'>";
 
         // Reason field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+        $reasonLabel = __('Reason', 'moreticket');
         if ($config->mandatoryWaitingReason() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $reasonLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-        echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $reasonLabel,
+            'input' => [
+                'type' => 'text',
+                'name' => 'reason',
+                'value' => Html::cleanInputText($this->fields['reason'] ?? ''),
+                'col_lg' => 4,
+                'col_md' => 6,
+            ]
+        ]);
 
         // Waiting Type field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+        $waitingTypeLabel = PluginMoreticketWaitingType::getTypeName(1);
         if ($config->mandatoryWaitingType() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $waitingTypeLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
-        Dropdown::show('PluginMoreticketWaitingType', $opt);
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $waitingTypeLabel,
+            'input' => [
+                'type' => 'select',
+                'name' => 'plugin_moreticket_waitingtypes_id',
+                'values' => [Dropdown::EMPTY_VALUE] + getOptionForItems(PluginMoreticketWaitingType::class),
+                'value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0,
+                'noLib' => true,
+                'col_lg' => 4,
+                'col_md' => 6,
+                'actions' => getItemActionButtons(['info', 'add'], PluginMoreticketWaitingType::class),
+            ]
+        ]);
 
         // Postponement date field
-        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-        echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+        $dateLabel = __('Postponement date', 'moreticket');
         if ($config->mandatoryReportDate() == true) {
-            echo "&nbsp;<span class='text-danger'>*</span>";
+            $dateLabel .= "&nbsp;<span class='text-danger'>*</span>";
         }
-        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
         $date_value = $this->fields['date_report'] ?? '';
         if (empty($date_value) || $date_value == 'NULL') {
             $date_value = date("Y-m-d\\TH:i");
         } else {
             $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
         }
-        echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
-        echo "</div></label></div>";
+        renderTwigTemplate('macros/wrappedInput.twig', [
+            'title' => $dateLabel,
+            'input' => [
+                'type' => 'datetime-local',
+                'name' => 'date_report',
+                'value' => $date_value,
+                'col_lg' => 4,
+                'col_md' => 6,
+            ]
+        ]);
 
         echo "</div>"; // .row
         echo "</div>"; // .card-body
