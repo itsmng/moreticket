@@ -28,95 +28,101 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
 
 /**
  * Class PluginMoreticketTicketTask
  */
-class PluginMoreticketTicketTask extends CommonITILTask {
+class PluginMoreticketTicketTask extends CommonITILTask
+{
 
-   static $rightname = "plugin_moreticket";
+    static $rightname = "plugin_moreticket";
 
-   /**
-    * functions mandatory
-    * getTypeName(), canCreate(), canView()
-    *
-    * @param int $nb
-    *
-    * @return string|translated
-    */
-   public static function getTypeName($nb = 0) {
+    /**
+     * functions mandatory
+     * getTypeName(), canCreate(), canView()
+     *
+     * @param int $nb
+     *
+     * @return string|translated
+     */
+    public static function getTypeName($nb = 0)
+    {
 
-      return _n('Ticket', 'Tickets', $nb);
-   }
+        return _n('Ticket', 'Tickets', $nb);
+    }
 
-   /**
-    * @param TicketTask $tickettask
-    *
-    * @return bool
-    */
-   static function beforeAdd(TicketTask $tickettask) {
+    /**
+     * @param TicketTask $tickettask
+     *
+     * @return bool
+     */
+    static function beforeAdd(TicketTask $tickettask)
+    {
 
-      if (!is_array($tickettask->input) || !count($tickettask->input)) {
-         // Already cancel by another plugin
-         return false;
-      }
+        if (!is_array($tickettask->input) || !count($tickettask->input)) {
+            // Already cancel by another plugin
+            return false;
+        }
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      if (isset($tickettask->input['_status'])
-          && $config->useWaiting() == true) {
+        if (
+            isset($tickettask->input['_status'])
+            && $config->useWaiting() == true
+        ) {
 
-         $updates['id'] = $tickettask->input['tickets_id'];
-         if (isset($tickettask->input['reason'])) {
-            $updates['reason'] = $tickettask->input['reason'];
-         }
-         if (isset($tickettask->input['date_report'])) {
-            $updates['date_report'] = $tickettask->input['date_report'];
-         }
-         if (isset($tickettask->input['plugin_moreticket_waitingtypes_id'])) {
-            $updates['plugin_moreticket_waitingtypes_id'] = $tickettask->input['plugin_moreticket_waitingtypes_id'];
-         }
-         $updates['status'] = $tickettask->input['_status'];
-         $ticket            = new Ticket();
-         $ticket->update($updates);
-         unset($tickettask->input['_status']);
-      }
-   }
+            $updates['id'] = $tickettask->input['tickets_id'];
+            if (isset($tickettask->input['reason'])) {
+                $updates['reason'] = $tickettask->input['reason'];
+            }
+            if (isset($tickettask->input['date_report'])) {
+                $updates['date_report'] = $tickettask->input['date_report'];
+            }
+            if (isset($tickettask->input['plugin_moreticket_waitingtypes_id'])) {
+                $updates['plugin_moreticket_waitingtypes_id'] = $tickettask->input['plugin_moreticket_waitingtypes_id'];
+            }
+            $updates['status'] = $tickettask->input['_status'];
+            $ticket = new Ticket();
+            $ticket->update($updates);
+            unset($tickettask->input['_status']);
+        }
+    }
 
-   /**
-    * @param TicketTask $tickettask
-    *
-    * @return bool
-    */
-   static function beforeUpdate(TicketTask $tickettask) {
+    /**
+     * @param TicketTask $tickettask
+     *
+     * @return bool
+     */
+    static function beforeUpdate(TicketTask $tickettask)
+    {
 
-      if (!is_array($tickettask->input) || !count($tickettask->input)) {
-         // Already cancel by another plugin
-         return false;
-      }
+        if (!is_array($tickettask->input) || !count($tickettask->input)) {
+            // Already cancel by another plugin
+            return false;
+        }
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      if (isset($tickettask->input['_status']) && $config->useWaiting() == true) {
-         $updates['id'] = $tickettask->input['tickets_id'];
+        if (isset($tickettask->input['_status']) && $config->useWaiting() == true) {
+            $updates['id'] = $tickettask->input['tickets_id'];
 
-         if (isset($tickettask->input['reason'])) {
-            $updates['reason'] = $tickettask->input['reason'];
-         }
-         if (isset($tickettask->input['date_report'])) {
-            $updates['date_report'] = $tickettask->input['date_report'];
-         }
-         if (isset($tickettask->input['plugin_moreticket_waitingtypes_id'])) {
-            $updates['plugin_moreticket_waitingtypes_id'] = $tickettask->input['plugin_moreticket_waitingtypes_id'];
-         }
+            if (isset($tickettask->input['reason'])) {
+                $updates['reason'] = $tickettask->input['reason'];
+            }
+            if (isset($tickettask->input['date_report'])) {
+                $updates['date_report'] = $tickettask->input['date_report'];
+            }
+            if (isset($tickettask->input['plugin_moreticket_waitingtypes_id'])) {
+                $updates['plugin_moreticket_waitingtypes_id'] = $tickettask->input['plugin_moreticket_waitingtypes_id'];
+            }
 
-         $updates['status'] = $tickettask->input['_status'];
-         $ticket            = new Ticket();
-         $ticket->update($updates);
-         unset($tickettask->input['_status']);
-      }
-   }
+            $updates['status'] = $tickettask->input['_status'];
+            $ticket = new Ticket();
+            $ticket->update($updates);
+            unset($tickettask->input['_status']);
+        }
+    }
 }

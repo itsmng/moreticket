@@ -28,57 +28,66 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
 /**
  * Class PluginMoreticketWaitingType
  */
-class PluginMoreticketWaitingType extends CommonTreeDropdown {
+class PluginMoreticketWaitingType extends CommonTreeDropdown
+{
 
-   static $rightname = "dropdown";
+    static $rightname = "dropdown";
 
-   /**
-    * @param int $nb
-    *
-    * @return \translated
-    */
-   public static function getTypeName($nb = 0) {
+    /**
+     * @param int $nb
+     *
+     * @return \translated
+     */
+    public static function getTypeName($nb = 0)
+    {
 
-      return _n('Waiting type', 'Waiting types', $nb, 'moreticket');
-   }
+        return _n('Waiting type', 'Waiting types', $nb, 'moreticket');
+    }
 
-   /**
-    * @return array
-    */
-   function getAdditionalFields() {
+    /**
+     * @return array
+     */
+    function getAdditionalFields()
+    {
+        if (defined('ITSM_VERSION') && version_compare(ITSM_VERSION, '2.0.0', '>=')) {
+            return parent::getAdditionalFields();
+        }
 
-      $tab = [['name'  => $this->getForeignKeyField(),
-                         'label' => __('As child of'),
-                         'type'  => 'parent',
-                         'list'  => false]
-      ];
+        $tab = [
+            [
+                'name' => $this->getForeignKeyField(),
+                'label' => __('As child of'),
+                'type' => 'parent',
+                'list' => false
+            ]
+        ];
 
-      return $tab;
+        return $tab;
+    }
 
-   }
+    /**
+     * Provides search options configuration. Do not rely directly
+     * on this, @see CommonDBTM::searchOptions instead.
+     *
+     * @since 9.3
+     *
+     * This should be overloaded in Class
+     *
+     * @return array a *not indexed* array of search options
+     *
+     * @see https://glpi-developer-documentation.rtfd.io/en/master/devapi/search.html
+     **/
+    public function rawSearchOptions()
+    {
 
-   /**
-    * Provides search options configuration. Do not rely directly
-    * on this, @see CommonDBTM::searchOptions instead.
-    *
-    * @since 9.3
-    *
-    * This should be overloaded in Class
-    *
-    * @return array a *not indexed* array of search options
-    *
-    * @see https://glpi-developer-documentation.rtfd.io/en/master/devapi/search.html
-    **/
-   public function rawSearchOptions() {
+        $tab = parent::rawSearchOptions();
 
-      $tab = parent::rawSearchOptions();
-
-      return $tab;
-   }
+        return $tab;
+    }
 }

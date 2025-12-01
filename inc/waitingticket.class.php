@@ -28,769 +28,849 @@
  */
 
 if (!defined('GLPI_ROOT')) {
-   die("Sorry. You can't access directly to this file");
+    die("Sorry. You can't access directly to this file");
 }
 
 /**
  * Class PluginMoreticketWaitingTicket
  */
-class PluginMoreticketWaitingTicket extends CommonDBTM {
+class PluginMoreticketWaitingTicket extends CommonDBTM
+{
 
-   static $types     = ['Ticket'];
-   var    $dohistory = true;
-   static $rightname = "plugin_moreticket";
+    static $types = ['Ticket'];
+    var $dohistory = true;
+    static $rightname = "plugin_moreticket";
 
-   /**
-    * Have I the global right to "create" the Object
-    * May be overloaded if needed (ex KnowbaseItem)
-    *
-    * @return booleen
-    **/
-   static function canCreate() {
+    /**
+     * Have I the global right to "create" the Object
+     * May be overloaded if needed (ex KnowbaseItem)
+     *
+     * @return booleen
+     **/
+    static function canCreate()
+    {
 
-      if (static::$rightname) {
-         return Session::haveRight(static::$rightname, UPDATE);
-      }
-      return false;
-   }
+        if (static::$rightname) {
+            return Session::haveRight(static::$rightname, UPDATE);
+        }
+        return false;
+    }
 
-   /**
-    * functions mandatory
-    * getTypeName(), canCreate(), canView()
-    * @param int $nb
-    * @return string|translated
-    */
-   public static function getTypeName($nb = 0) {
+    /**
+     * functions mandatory
+     * getTypeName(), canCreate(), canView()
+     * @param int $nb
+     * @return string|translated
+     */
+    public static function getTypeName($nb = 0)
+    {
 
-      return _n('Waiting ticket', 'Waiting tickets', $nb, 'moreticket');
-   }
+        return _n('Waiting ticket', 'Waiting tickets', $nb, 'moreticket');
+    }
 
-   /**
-    * Display moreticket-item's tab for each users
-    *
-    * @param CommonGLPI $item
-    * @param int        $withtemplate
-    *
-    * @return array|string
-    */
-   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
+    /**
+     * Display moreticket-item's tab for each users
+     *
+     * @param CommonGLPI $item
+     * @param int        $withtemplate
+     *
+     * @return array|string
+     */
+    function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      if (!$withtemplate) {
-         if ($item->getType() == 'Ticket' && $config->useWaiting() == true) {
-            if ($_SESSION['glpishow_count_on_tabs']) {
-               $dbu = new DbUtils();
-               return self::createTabEntry(self::getTypeName(2),
-                                           $dbu->countElementsInTable($this->getTable(),
-                                                                ["tickets_id" => $item->getID()]));
+        if (!$withtemplate) {
+            if ($item->getType() == 'Ticket' && $config->useWaiting() == true) {
+                if ($_SESSION['glpishow_count_on_tabs']) {
+                    $dbu = new DbUtils();
+                    return self::createTabEntry(
+                        self::getTypeName(2),
+                        $dbu->countElementsInTable(
+                            $this->getTable(),
+                            ["tickets_id" => $item->getID()]
+                        )
+                    );
+                }
+                return self::getTypeName(2);
             }
-            return self::getTypeName(2);
-         }
-      }
-      return '';
-   }
+        }
+        return '';
+    }
 
-   /**
-    * Display tab's content for each users
-    *
-    * @static
-    *
-    * @param CommonGLPI $item
-    * @param int        $tabnum
-    * @param int        $withtemplate
-    *
-*@return bool|true
-    */
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
+    /**
+     * Display tab's content for each users
+     *
+     * @static
+     *
+     * @param CommonGLPI $item
+     * @param int        $tabnum
+     * @param int        $withtemplate
+     *
+     *@return bool|true
+     */
+    static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
 
-      if (in_array($item->getType(), PluginMoreticketWaitingTicket::getTypes(true))) {
-         self::showForTicket($item);
-      }
-      return true;
-   }
+        if (in_array($item->getType(), PluginMoreticketWaitingTicket::getTypes(true))) {
+            self::showForTicket($item);
+        }
+        return true;
+    }
 
-   /**
-    * Check the mandatory values of forms
-    *
-    * @param      $values
-    * @param bool $add
-    *
-    * @return bool
-    */
-   static function checkMandatory($values, $add = false) {
+    /**
+     * Check the mandatory values of forms
+     *
+     * @param      $values
+     * @param bool $add
+     *
+     * @return bool
+     */
+    static function checkMandatory($values, $add = false)
+    {
 
-      $checkKo   = [];
-      $dateError = false;
+        $checkKo = [];
+        $dateError = false;
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      $mandatory_fields = [];
+        $mandatory_fields = [];
 
-      if ($config->mandatoryReportDate() == true) {
-         $mandatory_fields['date_report'] = __('Postponement date', 'moreticket');
-      }
+        if ($config->mandatoryReportDate() == true) {
+            $mandatory_fields['date_report'] = __('Postponement date', 'moreticket');
+        }
 
-      if ($config->mandatoryWaitingType() == true) {
-         $mandatory_fields['plugin_moreticket_waitingtypes_id'] = PluginMoreticketWaitingType::getTypeName(1);
-      }
+        if ($config->mandatoryWaitingType() == true) {
+            $mandatory_fields['plugin_moreticket_waitingtypes_id'] = PluginMoreticketWaitingType::getTypeName(1);
+        }
 
-      if ($config->mandatoryWaitingReason() == true) {
-         $mandatory_fields['reason'] = __('Reason', 'moreticket');
-      }
+        if ($config->mandatoryWaitingReason() == true) {
+            $mandatory_fields['reason'] = __('Reason', 'moreticket');
+        }
 
-      $msg = [];
+        $msg = [];
 
-      foreach ($mandatory_fields as $key => $value) {
-         if (!array_key_exists($key, $values)) {
-            $msg[]     = $value;
-            $checkKo[] = 1;
-         }
-      }
-
-      foreach ($values as $key => $value) {
-         if (array_key_exists($key, $mandatory_fields)) {
-            if ($key != 'date_report' && empty($value)) {
-               $msg[]     = $mandatory_fields[$key];
-               $checkKo[] = 1;
-            } else if ($key == 'date_report' && $value == 'NULL') {
-               $msg[]     = $mandatory_fields[$key];
-               $checkKo[] = 1;
-            } else if ($key == 'date_report' && strtotime($value) <= time()) {
-               $dateError = Html::convDateTime($value);
-               $checkKo[] = 1;
+        foreach ($mandatory_fields as $key => $value) {
+            if (!array_key_exists($key, $values)) {
+                $msg[] = $value;
+                $checkKo[] = 1;
             }
-         }
-         $_SESSION['glpi_plugin_moreticket_waiting'][$key] = $value;
-      }
+        }
 
-      if (in_array(1, $checkKo)) {
-         if (!$add) {
-            $errorMessage = __('Waiting ticket cannot be saved', 'moreticket') . "<br>";
-         } else {
-            $errorMessage = __('Ticket cannot be saved', 'moreticket') . "<br>";
-         }
-
-         if ($dateError) {
-            $errorMessage .= __("Report date is inferior of today's date", 'moreticket') . " : " . $dateError . "<br>";
-         }
-
-         if (count($msg)) {
-            $errorMessage .= _n('Mandatory field', 'Mandatory fields', 2) . " : " . implode(', ', $msg);
-         }
-
-         Session::addMessageAfterRedirect($errorMessage, false, ERROR);
-
-         return false;
-      }
-
-      return true;
-   }
-
-   /**
-    * Print the waiting ticket form
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *     - target filename : where to go when done.
-    *     - withtemplate boolean : template or basic item
-    *
-    * @return Nothing (display)
-    * */
-   function showForm($ID, $options = []) {
-
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
-
-      if ($ID > 0) {
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
-            $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $this->getEmpty();
-      }
-
-      // If values are saved in session we retrieve it
-      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
-         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
-            switch ($key) {
-               case 'reason':
-                  $this->fields[$key] = stripslashes($value);
-                  break;
-               default :
-                  $this->fields[$key] = $value;
-                  break;
+        foreach ($values as $key => $value) {
+            if (array_key_exists($key, $mandatory_fields)) {
+                if ($key != 'date_report' && empty($value)) {
+                    $msg[] = $mandatory_fields[$key];
+                    $checkKo[] = 1;
+                } else if ($key == 'date_report' && $value == 'NULL') {
+                    $msg[] = $mandatory_fields[$key];
+                    $checkKo[] = 1;
+                } else if ($key == 'date_report' && strtotime($value) <= time()) {
+                    $dateError = Html::convDateTime($value);
+                    $checkKo[] = 1;
+                }
             }
-         }
-      }
+            $_SESSION['glpi_plugin_moreticket_waiting'][$key] = $value;
+        }
 
-      unset($_SESSION['glpi_plugin_moreticket_waiting']);
-
-      $config = new PluginMoreticketConfig();
-
-      echo "<div class='spaced' id='moreticket_waiting_ticket'>";
-      echo "</br>";
-      echo "<table class='moreticket_waiting_ticket' id='cl_menu'>";
-      echo "<tr><td>";
-      echo __('Reason', 'moreticket');
-      if ($config->mandatoryWaitingReason() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      Html::autocompletionTextField($this, "reason");
-      echo "</td></tr>";
-      echo "<tr><td>";
-      echo PluginMoreticketWaitingType::getTypeName(1);
-      if ($config->mandatoryWaitingType() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id']];
-      Dropdown::show('PluginMoreticketWaitingType', $opt);
-      echo "</td></tr>";
-      echo "<tr><td>";
-      echo __('Postponement date', 'moreticket');
-
-      if ($config->mandatoryReportDate() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      if ($this->fields['date_report'] == 'NULL') {
-         $this->fields['date_report'] = date("Y-m-d H:i:s");
-      }
-      Html::showDateTimeField("date_report", ['value'      => $this->fields['date_report'],
-                                              'maybeempty' => false]);
-
-      echo "</td></tr>";
-      echo "</table>";
-      echo "</div>";
-   }
-
-   /**
-    * Print the waiting ticket task form
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *     - target filename : where to go when done.
-    *     - withtemplate boolean : template or basic item
-    *
-    * @return Nothing (display)
-    * */
-   function showFormTicketTask($ID, $options = []) {
-
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
-
-      if ($ID > 0) {
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
-            $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $this->getEmpty();
-      }
-
-      // If values are saved in session we retrieve it
-      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
-         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
-            switch ($key) {
-               case 'reason':
-                  $this->fields[$key] = stripslashes($value);
-                  break;
-               default :
-                  $this->fields[$key] = $value;
-                  break;
-            }
-         }
-      }
-
-      unset($_SESSION['glpi_plugin_moreticket_waiting']);
-
-      $config = new PluginMoreticketConfig();
-
-      echo "<div class='spaced' id='moreticket_waiting_ticket_task'>";
-      echo "</br>";
-      echo "<table class='moreticket_waiting_ticket' id='cl_menu'>";
-      echo "<tr><td>";
-      echo __('Reason', 'moreticket');
-      if ($config->mandatoryWaitingReason() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      Html::autocompletionTextField($this, "reason");
-      echo "</td></tr>";
-      echo "<tr><td>";
-      echo PluginMoreticketWaitingType::getTypeName(1);
-      if ($config->mandatoryWaitingType() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id']];
-      Dropdown::show('PluginMoreticketWaitingType', $opt);
-      echo "</td></tr>";
-      echo "<tr><td>";
-      echo __('Postponement date', 'moreticket');
-
-      if ($config->mandatoryReportDate() == true) {
-         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
-      }
-      if ($this->fields['date_report'] == 'NULL') {
-         $this->fields['date_report'] = date("Y-m-d H:i:s");
-      }
-      Html::showDateTimeField("date_report", ['value'      => $this->fields['date_report'],
-                                              'maybeempty' => false]);
-
-      echo "</td></tr>";
-      echo "</table>";
-      echo "</div>";
-   }
-
-   /**
-    * Print the wainting ticket form
-    *
-    * @param $item
-    * @return Nothing
-    * @internal param int $ID ID of the item
-    * @internal param array $options - target filename : where to go when done.*     - target filename : where to go when done.
-    *     - withtemplate boolean : template or basic item
-    *
-    */
-   static function showForTicket($item) {
-
-      // validation des droits
-      if (!Session::haveRight('plugin_moreticket', READ)) {
-         return false;
-      }
-
-      if (isset($_REQUEST["start"])) {
-         $start = $_REQUEST["start"];
-      } else {
-         $start = 0;
-      }
-
-      // Total Number of events
-      $dbu    = new DbUtils();
-      $number = $dbu->countElementsInTable("glpi_plugin_moreticket_waitingtickets",
-                                           ["tickets_id" =>$item->getField('id')]);
-
-      if ($number < 1) {
-         echo "<div class='center'>";
-         echo "<table class='tab_cadre_fixe'>";
-         echo "<tr><th>" . __('No historical') . "</th></tr>";
-         echo "</table>";
-         echo "</div><br>";
-         return;
-      } else {
-         echo "<div class='center'>";
-         // Display the pager
-         Html::printAjaxPager(__('Ticket suspension history', 'moreticket'), $start, $number);
-         echo "<table class='tab_cadre_fixe'>";
-         echo "<tr>";
-         echo "<th>" . __('Suspension date', 'moreticket') . "</th>";
-         echo "<th>" . __('Reason', 'moreticket') . "</th>";
-         echo "<th>" . PluginMoreticketWaitingType::getTypeName(1) . "</th>";
-         echo "<th>" . __('Postponement date', 'moreticket') . "</th>";
-         echo "<th>" . __('Suspension end date', 'moreticket') . "</th>";
-         echo "</tr>";
-
-         foreach (self::getWaitingTicketFromDB($item->getField('id'),
-                                               ['start' => $start,
-                                                'limit' => $_SESSION['glpilist_limit']]) as $waitingTicket) {
-
-            echo "<tr class='tab_bg_2'>";
-            echo "<td>";
-            echo Html::convDateTime($waitingTicket['date_suspension']);
-            echo "</td>";
-            echo "<td>";
-            echo $waitingTicket['reason'];
-            echo "</td>";
-            echo "<td>";
-            echo Dropdown::getDropdownName('glpi_plugin_moreticket_waitingtypes',
-                                           $waitingTicket['plugin_moreticket_waitingtypes_id']);
-            echo "</td>";
-            echo "<td>";
-            if ($waitingTicket['date_report'] == "0000-00-00 00:00:00") {
-               echo _x('periodicity', 'None');
+        if (in_array(1, $checkKo)) {
+            if (!$add) {
+                $errorMessage = __('Waiting ticket cannot be saved', 'moreticket') . "<br>";
             } else {
-               echo Html::convDateTime($waitingTicket['date_report']);
+                $errorMessage = __('Ticket cannot be saved', 'moreticket') . "<br>";
             }
-            echo "</td>";
-            echo "<td>";
-            echo Html::convDateTime($waitingTicket['date_end_suspension']);
-            echo "</td>";
+
+            if ($dateError) {
+                $errorMessage .= __("Report date is inferior of today's date", 'moreticket') . " : " . $dateError . "<br>";
+            }
+
+            if (count($msg)) {
+                $errorMessage .= _n('Mandatory field', 'Mandatory fields', 2) . " : " . implode(', ', $msg);
+            }
+
+            Session::addMessageAfterRedirect($errorMessage, false, ERROR);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Print the waiting ticket form
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *     - target filename : where to go when done.
+     *     - withtemplate boolean : template or basic item
+     *
+     * @return Nothing (display)
+     * */
+    function showForm($ID, $options = [])
+    {
+
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
+
+        if ($ID > 0) {
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
+            }
+        } else {
+            // Create item
+            $this->getEmpty();
+        }
+
+        // If values are saved in session we retrieve it
+        if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+            foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+                switch ($key) {
+                    case 'reason':
+                        $this->fields[$key] = stripslashes($value);
+                        break;
+                    default:
+                        $this->fields[$key] = $value;
+                        break;
+                }
+            }
+        }
+
+        unset($_SESSION['glpi_plugin_moreticket_waiting']);
+
+        $config = new PluginMoreticketConfig();
+
+        echo "<div class='spaced' id='moreticket_waiting_ticket'>";
+        echo "</br>";
+        echo "<table class='moreticket_waiting_ticket' id='cl_menu'>";
+        echo "<tr><td>";
+        echo __('Reason', 'moreticket');
+        if ($config->mandatoryWaitingReason() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        Html::autocompletionTextField($this, "reason");
+        echo "</td></tr>";
+        echo "<tr><td>";
+        echo PluginMoreticketWaitingType::getTypeName(1);
+        if ($config->mandatoryWaitingType() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id']];
+        Dropdown::show('PluginMoreticketWaitingType', $opt);
+        echo "</td></tr>";
+        echo "<tr><td>";
+        echo __('Postponement date', 'moreticket');
+
+        if ($config->mandatoryReportDate() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        if ($this->fields['date_report'] == 'NULL') {
+            $this->fields['date_report'] = date("Y-m-d H:i:s");
+        }
+        Html::showDateTimeField("date_report", [
+            'value' => $this->fields['date_report'],
+            'maybeempty' => false
+        ]);
+
+        echo "</td></tr>";
+        echo "</table>";
+        echo "</div>";
+    }
+
+    /**
+     * Print the waiting ticket task form
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *     - target filename : where to go when done.
+     *     - withtemplate boolean : template or basic item
+     *
+     * @return Nothing (display)
+     * */
+    function showFormTicketTask($ID, $options = [])
+    {
+
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
+
+        if ($ID > 0) {
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
+            }
+        } else {
+            // Create item
+            $this->getEmpty();
+        }
+
+        // If values are saved in session we retrieve it
+        if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+            foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+                switch ($key) {
+                    case 'reason':
+                        $this->fields[$key] = stripslashes($value);
+                        break;
+                    default:
+                        $this->fields[$key] = $value;
+                        break;
+                }
+            }
+        }
+
+        unset($_SESSION['glpi_plugin_moreticket_waiting']);
+
+        $config = new PluginMoreticketConfig();
+
+        echo "<div class='spaced' id='moreticket_waiting_ticket_task'>";
+        echo "</br>";
+        echo "<table class='moreticket_waiting_ticket' id='cl_menu'>";
+        echo "<tr><td>";
+        echo __('Reason', 'moreticket');
+        if ($config->mandatoryWaitingReason() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        Html::autocompletionTextField($this, "reason");
+        echo "</td></tr>";
+        echo "<tr><td>";
+        echo PluginMoreticketWaitingType::getTypeName(1);
+        if ($config->mandatoryWaitingType() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id']];
+        Dropdown::show('PluginMoreticketWaitingType', $opt);
+        echo "</td></tr>";
+        echo "<tr><td>";
+        echo __('Postponement date', 'moreticket');
+
+        if ($config->mandatoryReportDate() == true) {
+            echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
+        }
+        if ($this->fields['date_report'] == 'NULL') {
+            $this->fields['date_report'] = date("Y-m-d H:i:s");
+        }
+        Html::showDateTimeField("date_report", [
+            'value' => $this->fields['date_report'],
+            'maybeempty' => false
+        ]);
+
+        echo "</td></tr>";
+        echo "</table>";
+        echo "</div>";
+    }
+
+    /**
+     * Print the wainting ticket form
+     *
+     * @param $item
+     * @return Nothing
+     * @internal param int $ID ID of the item
+     * @internal param array $options - target filename : where to go when done.*     - target filename : where to go when done.
+     *     - withtemplate boolean : template or basic item
+     *
+     */
+    static function showForTicket($item)
+    {
+
+        // validation des droits
+        if (!Session::haveRight('plugin_moreticket', READ)) {
+            return false;
+        }
+
+        if (isset($_REQUEST["start"])) {
+            $start = $_REQUEST["start"];
+        } else {
+            $start = 0;
+        }
+
+        // Total Number of events
+        $dbu = new DbUtils();
+        $number = $dbu->countElementsInTable(
+            "glpi_plugin_moreticket_waitingtickets",
+            ["tickets_id" => $item->getField('id')]
+        );
+
+        if ($number < 1) {
+            echo "<div class='center'>";
+            echo "<table class='tab_cadre_fixe'>";
+            echo "<tr><th>" . __('No historical') . "</th></tr>";
+            echo "</table>";
+            echo "</div><br>";
+            return;
+        } else {
+            echo "<div class='center'>";
+            // Display the pager
+            Html::printAjaxPager(__('Ticket suspension history', 'moreticket'), $start, $number);
+            echo "<table class='tab_cadre_fixe'>";
+            echo "<tr>";
+            echo "<th>" . __('Suspension date', 'moreticket') . "</th>";
+            echo "<th>" . __('Reason', 'moreticket') . "</th>";
+            echo "<th>" . PluginMoreticketWaitingType::getTypeName(1) . "</th>";
+            echo "<th>" . __('Postponement date', 'moreticket') . "</th>";
+            echo "<th>" . __('Suspension end date', 'moreticket') . "</th>";
             echo "</tr>";
-         }
 
-         echo "</table>";
-         echo "</div>";
-         Html::printAjaxPager(__('Ticket suspension history', 'moreticket'), $start, $number);
-      }
-   }
+            foreach (self::getWaitingTicketFromDB(
+                $item->getField('id'),
+                [
+                    'start' => $start,
+                    'limit' => $_SESSION['glpilist_limit']
+                ]
+            ) as $waitingTicket) {
 
-   /**
-    * Get last waitingTicket
-    *
-    * @param       $tickets_id
-    * @param array $options
-    *
-    * @return array|bool|mixed
-    */
-   static function getWaitingTicketFromDB($tickets_id, $options = []) {
-      global $DB;
+                echo "<tr class='tab_bg_2'>";
+                echo "<td>";
+                echo Html::convDateTime($waitingTicket['date_suspension']);
+                echo "</td>";
+                echo "<td>";
+                echo $waitingTicket['reason'];
+                echo "</td>";
+                echo "<td>";
+                echo Dropdown::getDropdownName(
+                    'glpi_plugin_moreticket_waitingtypes',
+                    $waitingTicket['plugin_moreticket_waitingtypes_id']
+                );
+                echo "</td>";
+                echo "<td>";
+                if ($waitingTicket['date_report'] == "0000-00-00 00:00:00") {
+                    echo _x('periodicity', 'None');
+                } else {
+                    echo Html::convDateTime($waitingTicket['date_report']);
+                }
+                echo "</td>";
+                echo "<td>";
+                echo Html::convDateTime($waitingTicket['date_end_suspension']);
+                echo "</td>";
+                echo "</tr>";
+            }
 
-      $dbu = new DbUtils();
-      if (sizeof($options) == 0) {
-         $iterator = $DB->request("glpi_plugin_moreticket_waitingtickets",
-                                                       '`tickets_id` = ' . $tickets_id .' 
-                 AND (UNIX_TIMESTAMP(`date_end_suspension`) = 0 OR UNIX_TIMESTAMP(`date_end_suspension`) IS NULL)');
-         $data_WaitingType = [];
-         while ($row = $iterator->next()) {
-            $data_WaitingType[$row['id']] = $row;
-         }
-      } else {
-         $iterator = $DB->request("glpi_plugin_moreticket_waitingtickets",
-                   "tickets_id = $tickets_id 
+            echo "</table>";
+            echo "</div>";
+            Html::printAjaxPager(__('Ticket suspension history', 'moreticket'), $start, $number);
+        }
+    }
+
+    /**
+     * Get last waitingTicket
+     *
+     * @param       $tickets_id
+     * @param array $options
+     *
+     * @return array|bool|mixed
+     */
+    static function getWaitingTicketFromDB($tickets_id, $options = [])
+    {
+        global $DB;
+
+        $dbu = new DbUtils();
+        if (sizeof($options) == 0) {
+            $iterator = $DB->request(
+                "glpi_plugin_moreticket_waitingtickets",
+                '`tickets_id` = ' . $tickets_id . ' 
+                 AND (UNIX_TIMESTAMP(`date_end_suspension`) = 0 OR UNIX_TIMESTAMP(`date_end_suspension`) IS NULL)'
+            );
+            $data_WaitingType = [];
+            while ($row = $iterator->next()) {
+                $data_WaitingType[$row['id']] = $row;
+            }
+        } else {
+            $iterator = $DB->request(
+                "glpi_plugin_moreticket_waitingtickets",
+                "tickets_id = $tickets_id 
                    ORDER BY `date_suspension` DESC 
-                   LIMIT " . intval($options['start']) . "," . intval($options['limit']));
+                   LIMIT " . intval($options['start']) . "," . intval($options['limit'])
+            );
 
-         $data_WaitingType = [];
-         while ($row = $iterator->next()) {
-            $data_WaitingType[$row['id']] = $row;
-         }
-      }
+            $data_WaitingType = [];
+            while ($row = $iterator->next()) {
+                $data_WaitingType[$row['id']] = $row;
+            }
+        }
 
-      if (sizeof($data_WaitingType) > 0) {
-         if (sizeof($options) == 0) {
-            $data_WaitingType = reset($data_WaitingType);
-         }
+        if (sizeof($data_WaitingType) > 0) {
+            if (sizeof($options) == 0) {
+                $data_WaitingType = reset($data_WaitingType);
+            }
 
-         return $data_WaitingType;
-      }
+            return $data_WaitingType;
+        }
 
-      return false;
-   }
+        return false;
+    }
 
-   /**
-    * @param $item
-    */
-   static function preUpdateWaitingTicket($item) {
-      $config = new PluginMoreticketConfig();
-      if ($config->useWaiting()) {
-         $waiting_ticket = new self();
+    /**
+     * @param $item
+     */
+    static function preUpdateWaitingTicket($item)
+    {
+        $config = new PluginMoreticketConfig();
+        if ($config->useWaiting()) {
+            $waiting_ticket = new self();
 
-         // Then we add tickets informations
-         if (isset($item->fields['id'])
-             && isset($item->fields['status'])
-             && isset($item->input['status'])) {
-            // ADD
-            if ($item->fields['status'] != CommonITILObject::WAITING
-                && $item->input['status'] == CommonITILObject::WAITING) {
+            // Then we add tickets informations
+            if (
+                isset($item->fields['id'])
+                && isset($item->fields['status'])
+                && isset($item->input['status'])
+            ) {
+                // ADD
+                if (
+                    $item->fields['status'] != CommonITILObject::WAITING
+                    && $item->input['status'] == CommonITILObject::WAITING
+                ) {
 
-               if (self::checkMandatory($item->input)) {
-                  if (isset($item->input['date_report'])
-                      && ($item->input['date_report'] == "0000-00-00 00:00:00" || empty($item->input['date_report']))) {
-                     $item->input['date_report'] = 'NULL';
-                  }
+                    if (self::checkMandatory($item->input)) {
+                        if (
+                            isset($item->input['date_report'])
+                            && ($item->input['date_report'] == "0000-00-00 00:00:00" || empty($item->input['date_report']))
+                        ) {
+                            $item->input['date_report'] = 'NULL';
+                        }
 
-                  $status = (in_array($item->fields['status'],
-                                      [CommonITILObject::SOLVED, CommonITILObject::CLOSED]))
-                     ? CommonITILObject::ASSIGNED : $item->fields['status'];
+                        $status = (in_array(
+                            $item->fields['status'],
+                            [CommonITILObject::SOLVED, CommonITILObject::CLOSED]
+                        ))
+                            ? CommonITILObject::ASSIGNED : $item->fields['status'];
 
-                  // Then we add tickets informations
-                  $input = ['reason'                            => (isset($item->input['reason'])) ? $item->input['reason'] : "",
-                                 'tickets_id'                        => $item->fields['id'],
-                                 'date_report'                       => (isset($item->input['date_report'])) ? $item->input['date_report'] : "NULL",
-                                 'date_suspension'                   => date("Y-m-d H:i:s"),
-                                 'date_end_suspension'               => 'NULL',
-                                 'status'                            => $status,
-                                 'plugin_moreticket_waitingtypes_id' => (isset($item->input['plugin_moreticket_waitingtypes_id'])) ? $item->input['plugin_moreticket_waitingtypes_id'] : 0];
-                  if ($waiting_ticket->add($input)) {
+                        // Then we add tickets informations
+                        $input = [
+                            'reason' => (isset($item->input['reason'])) ? $item->input['reason'] : "",
+                            'tickets_id' => $item->fields['id'],
+                            'date_report' => (isset($item->input['date_report'])) ? $item->input['date_report'] : "NULL",
+                            'date_suspension' => date("Y-m-d H:i:s"),
+                            'date_end_suspension' => 'NULL',
+                            'status' => $status,
+                            'plugin_moreticket_waitingtypes_id' => (isset($item->input['plugin_moreticket_waitingtypes_id'])) ? $item->input['plugin_moreticket_waitingtypes_id'] : 0
+                        ];
+                        if ($waiting_ticket->add($input)) {
 
-                     unset($_SESSION['glpi_plugin_moreticket_waiting']);
-                  }
-               } else {
-                  unset($item->input['status']);
-               }
+                            unset($_SESSION['glpi_plugin_moreticket_waiting']);
+                        }
+                    } else {
+                        unset($item->input['status']);
+                    }
 
-               // UPDATE
-            } else if ($item->fields['status'] == CommonITILObject::WAITING
-                       && $item->input['status'] == CommonITILObject::WAITING) {
+                    // UPDATE
+                } else if (
+                    $item->fields['status'] == CommonITILObject::WAITING
+                    && $item->input['status'] == CommonITILObject::WAITING
+                ) {
 
-               $waiting_ticket_data = self::getWaitingTicketFromDB($item->fields['id']);
-               if (($waiting_ticket_data === false)) {
-                  if (self::checkMandatory($item->input)) {
-                     if (isset($item->input['date_report'])
-                         && $item->input['date_report'] == "0000-00-00 00:00:00") {
+                    $waiting_ticket_data = self::getWaitingTicketFromDB($item->fields['id']);
+                    if (($waiting_ticket_data === false)) {
+                        if (self::checkMandatory($item->input)) {
+                            if (
+                                isset($item->input['date_report'])
+                                && $item->input['date_report'] == "0000-00-00 00:00:00"
+                            ) {
+                                $item->input['date_report'] = 'NULL';
+                            }
+                            $input = [
+                                'reason' => (isset($item->input['reason'])) ? $item->input['reason'] : "",
+                                'tickets_id' => $item->fields['id'],
+                                'date_report' => (isset($item->input['date_report']) && !empty($item->input['date_report'])) ? $item->input['date_report'] : "NULL",
+                                'date_suspension' => date("Y-m-d H:i:s"),
+                                'date_end_suspension' => 'NULL',
+                                'plugin_moreticket_waitingtypes_id' => (isset($item->input['plugin_moreticket_waitingtypes_id'])) ? $item->input['plugin_moreticket_waitingtypes_id'] : 0
+                            ];
+
+                            // Then we add tickets informations
+                            if ($waiting_ticket->add($input)) {
+                                unset($_SESSION['glpi_plugin_moreticket_waiting']);
+                            }
+                        } else {
+                            unset($item->input['status']);
+                        }
+                    } else {
+                        $waiting_ticket->update([
+                            'id' => $waiting_ticket_data['id'],
+                            'reason' => $item->input['reason'],
+                            'date_report' => $item->input['date_report'],
+                            'plugin_moreticket_waitingtypes_id' => $item->input['plugin_moreticket_waitingtypes_id']
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $item
+     */
+    static function postUpdateWaitingTicket($item)
+    {
+
+        $waiting_ticket = new self();
+        // Then we add tickets informations
+        if (isset($item->fields['id'])) {
+            if (
+                isset($item->oldvalues['status'])
+                && $item->oldvalues['status'] == CommonITILObject::WAITING
+            ) {
+                if (
+                    isset($item->input['status'])
+                    && $item->input['status'] != CommonITILObject::WAITING
+                ) {
+                    // Get all waiting with date_suspension < today
+                    $condition = [
+                        'tickets_id' => $item->fields['id'],
+                        [
+                            'OR' => [
+                                ['date_end_suspension' => NULL],
+                                ['date_end_suspension' => '']
+                            ]
+                        ]
+                    ] + [
+                        new QueryExpression(
+                            'UNIX_TIMESTAMP(date_suspension) <= UNIX_TIMESTAMP(NOW())'
+                        )
+                    ];
+
+                    $lastWaiting = $waiting_ticket->find($condition);
+
+                    foreach ($lastWaiting as $field) {
+                        $waiting_ticket->update([
+                            'id' => $field['id'],
+                            'date_end_suspension' => date("Y-m-d H:i:s")
+                        ]);
+                    }
+                    unset($_SESSION['glpi_plugin_moreticket_waiting']);
+                }
+            }
+        }
+    }
+
+    // Hook done on before add ticket - checkMandatory
+    /**
+     * @param $item
+     * @return bool
+     */
+    static function preAddWaitingTicket($item)
+    {
+        if (!is_array($item->input) || !count($item->input)) {
+            // Already cancel by another plugin
+            return false;
+        }
+
+        $config = new PluginMoreticketConfig();
+        if (
+            isset($config->fields['use_waiting'])
+            && $config->useWaiting()
+        ) {
+            // Then we add tickets informations
+            if (
+                isset($item->input['id'])
+                && isset($item->input['status'])
+                && $item->input['status'] == CommonITILObject::WAITING
+                && !self::checkMandatory($item->input, true)
+            ) {
+
+                $_SESSION['saveInput'][$item->getType()] = $item->input;
+                $item->input = [];
+            }
+        }
+        return true;
+    }
+
+    // Hook done on after add ticket - add waitingtickets
+    /**
+     * @param $item
+     * @return bool
+     */
+    static function postAddWaitingTicket($item)
+    {
+        if (!is_array($item->input) || !count($item->input)) {
+            // Already cancel by another plugin
+            return false;
+        }
+
+        $config = new PluginMoreticketConfig();
+        if (isset($config->fields['use_waiting']) && $config->useWaiting()) {
+            $waiting_ticket = new self();
+            // Then we add tickets informations
+            if (isset($item->fields['id']) && $item->input['status'] == CommonITILObject::WAITING) {
+                if (self::checkMandatory($item->input)) {
+
+                    if (empty($item->input['date_report'])) {
                         $item->input['date_report'] = 'NULL';
-                     }
-                     $input = ['reason'                            => (isset($item->input['reason'])) ? $item->input['reason'] : "",
-                                    'tickets_id'                        => $item->fields['id'],
-                                    'date_report'                       => (isset($item->input['date_report']) && !empty($item->input['date_report'])) ? $item->input['date_report'] : "NULL",
-                                    'date_suspension'                   => date("Y-m-d H:i:s"),
-                                    'date_end_suspension'               => 'NULL',
-                                    'plugin_moreticket_waitingtypes_id' => (isset($item->input['plugin_moreticket_waitingtypes_id'])) ? $item->input['plugin_moreticket_waitingtypes_id'] : 0];
+                    }
+                    // Then we add tickets informations
+                    if (
+                        $waiting_ticket->add([
+                            'reason' => $item->input['reason'],
+                            'tickets_id' => $item->fields['id'],
+                            'date_report' => $item->input['date_report'],
+                            'date_suspension' => date("Y-m-d H:i:s"),
+                            'date_end_suspension' => 'NULL',
+                            'plugin_moreticket_waitingtypes_id' => $item->input['plugin_moreticket_waitingtypes_id']
+                        ])
+                    ) {
 
-                     // Then we add tickets informations
-                     if ($waiting_ticket->add($input)) {
                         unset($_SESSION['glpi_plugin_moreticket_waiting']);
-                     }
-                  } else {
-                     unset($item->input['status']);
-                  }
-               } else {
-                  $waiting_ticket->update(['id'                                => $waiting_ticket_data['id'],
-                                                'reason'                            => $item->input['reason'],
-                                                'date_report'                       => $item->input['date_report'],
-                                                'plugin_moreticket_waitingtypes_id' => $item->input['plugin_moreticket_waitingtypes_id']]);
-               }
+                    }
+                } else {
+                    $item->input['id'] = $item->fields['id'];
+                    $_SESSION['saveInput'][$item->getType()] = $item->input;
+                    unset($item->input['status']);
+                }
             }
-         }
-      }
-   }
+        }
+        return true;
+    }
 
-   /**
-    * @param $item
-    */
-   static function postUpdateWaitingTicket($item) {
+    /**
+     * Type than could be linked to a typo
+     *
+     * @param $all boolean, all type, or only allowed ones
+     *
+     * @return array of types
+     * */
+    static function getTypes($all = false)
+    {
 
-      $waiting_ticket = new self();
-      // Then we add tickets informations
-      if (isset($item->fields['id'])) {
-         if (isset($item->oldvalues['status'])
-             && $item->oldvalues['status'] == CommonITILObject::WAITING) {
-            if (isset($item->input['status'])
-                && $item->input['status'] != CommonITILObject::WAITING) {
-               // Get all waiting with date_suspension < today
-               $condition = ['tickets_id' => $item->fields['id'],
-                             [
-                                'OR' => [
-                                   ['date_end_suspension' => NULL],
-                                   ['date_end_suspension' => '']
-                                ]
-                             ]] + [new QueryExpression(
-                     'UNIX_TIMESTAMP(date_suspension) <= UNIX_TIMESTAMP(NOW())'
-                  )
-               ];
+        if ($all) {
+            return self::$types;
+        }
 
-               $lastWaiting = $waiting_ticket->find($condition);
+        // Only allowed types
+        $types = self::$types;
+        $dbu = new DbUtils();
 
-               foreach ($lastWaiting as $field) {
-                  $waiting_ticket->update(['id'                  => $field['id'],
-                                           'date_end_suspension' => date("Y-m-d H:i:s")]);
-               }
-               unset($_SESSION['glpi_plugin_moreticket_waiting']);
+        foreach ($types as $key => $type) {
+            if (!($item = $dbu->getItemForItemtype($type))) {
+                continue;
             }
-         }
-      }
-   }
 
-   // Hook done on before add ticket - checkMandatory
-   /**
-    * @param $item
-    * @return bool
-    */
-   static function preAddWaitingTicket($item) {
-      if (!is_array($item->input) || !count($item->input)) {
-         // Already cancel by another plugin
-         return false;
-      }
-
-      $config = new PluginMoreticketConfig();
-      if (isset($config->fields['use_waiting'])
-          && $config->useWaiting()) {
-         // Then we add tickets informations
-         if (isset($item->input['id'])
-             && isset($item->input['status'])
-             && $item->input['status'] == CommonITILObject::WAITING
-             && !self::checkMandatory($item->input, true)) {
-
-            $_SESSION['saveInput'][$item->getType()] = $item->input;
-            $item->input                             = [];
-         }
-      }
-      return true;
-   }
-
-   // Hook done on after add ticket - add waitingtickets
-   /**
-    * @param $item
-    * @return bool
-    */
-   static function postAddWaitingTicket($item) {
-      if (!is_array($item->input) || !count($item->input)) {
-         // Already cancel by another plugin
-         return false;
-      }
-
-      $config = new PluginMoreticketConfig();
-      if (isset($config->fields['use_waiting']) && $config->useWaiting()) {
-         $waiting_ticket = new self();
-         // Then we add tickets informations
-         if (isset($item->fields['id']) && $item->input['status'] == CommonITILObject::WAITING) {
-            if (self::checkMandatory($item->input)) {
-
-               if (empty($item->input['date_report'])) {
-                  $item->input['date_report'] = 'NULL';
-               }
-               // Then we add tickets informations
-               if ($waiting_ticket->add(['reason'                            => $item->input['reason'],
-                                              'tickets_id'                        => $item->fields['id'],
-                                              'date_report'                       => $item->input['date_report'],
-                                              'date_suspension'                   => date("Y-m-d H:i:s"),
-                                              'date_end_suspension'               => 'NULL',
-                                              'plugin_moreticket_waitingtypes_id' => $item->input['plugin_moreticket_waitingtypes_id']])) {
-
-                  unset($_SESSION['glpi_plugin_moreticket_waiting']);
-               }
-            } else {
-               $item->input['id']                       = $item->fields['id'];
-               $_SESSION['saveInput'][$item->getType()] = $item->input;
-               unset($item->input['status']);
+            if (!$item->canView()) {
+                unset($types[$key]);
             }
-         }
-      }
-      return true;
-   }
+        }
+        return $types;
+    }
 
-   /**
-    * Type than could be linked to a typo
-    *
-    * @param $all boolean, all type, or only allowed ones
-    *
-    * @return array of types
-    * */
-   static function getTypes($all = false) {
-
-      if ($all) {
-         return self::$types;
-      }
-
-      // Only allowed types
-      $types = self::$types;
-      $dbu   = new DbUtils();
-
-      foreach ($types as $key => $type) {
-         if (!($item = $dbu->getItemForItemtype($type))) {
-            continue;
-         }
-
-         if (!$item->canView()) {
-            unset($types[$key]);
-         }
-      }
-      return $types;
-   }
-
-   /**
-    * @return string
-    */
-   static function queryTicketWaiting() {
-      $query = "SELECT `glpi_tickets`.`id` AS tickets_id
+    /**
+     * @return string
+     */
+    static function queryTicketWaiting()
+    {
+        $query = "SELECT `glpi_tickets`.`id` AS tickets_id
                 FROM `glpi_tickets` 
                 WHERE `glpi_tickets`.`status` = '" . Ticket::WAITING . "'
                 AND `is_deleted` = 0";
 
-      return $query;
-   }
+        return $query;
+    }
 
-   /**
-    * Cron action
-    *
-    * @global $DB
-    * @global $CFG_GLPI
-    * @param $task for log
-    * @return int
-    */
-   static function cronMoreticketWaitingTicket($task = null) {
-      global $DB;
+    /**
+     * Cron action
+     *
+     * @global $DB
+     * @global $CFG_GLPI
+     * @param $task for log
+     * @return int
+     */
+    static function cronMoreticketWaitingTicket($task = null)
+    {
+        global $DB;
 
-      if ($task->fields["state"] == CronTask::STATE_DISABLE) {
-         return 0;
-      }
+        if ($task->fields["state"] == CronTask::STATE_DISABLE) {
+            return 0;
+        }
 
-      $cron_status = 0;
-      $today       = date('Y-m-d H:i:s');
+        $cron_status = 0;
+        $today = date('Y-m-d H:i:s');
 
-      $waiting_ticket = new self();
-      $ticket         = new Ticket();
-      $log            = new Log();
+        $waiting_ticket = new self();
+        $ticket = new Ticket();
+        $log = new Log();
 
-      $query_ticket_waiting = self::queryTicketWaiting();
-      foreach ($DB->request($query_ticket_waiting) as $data) {
-         // Update ticket only if last waiting has empty end of suspension
-         $waiting = $waiting_ticket->getWaitingTicketFromDB($data['tickets_id']);
-         if ($waiting
-             && !empty($waiting['date_report'])
-             && $waiting['date_report'] <= $today
-         ) {
-            $ticket->update(['id'     => $data['tickets_id'],
-                                  'status' => $waiting['status']]);
-            $waiting_ticket->update(['id'                  => $waiting['id'],
-                                          'date_end_suspension' => date("Y-m-d H:i:s")]);
-            $cron_status = 1;
-            $task->addVolume(1);
-            if (Session::isCron()) {
-               $log->history($data['tickets_id'], 'Ticket', [12, Ticket::WAITING, $waiting['status']]);
+        $query_ticket_waiting = self::queryTicketWaiting();
+        foreach ($DB->request($query_ticket_waiting) as $data) {
+            // Update ticket only if last waiting has empty end of suspension
+            $waiting = $waiting_ticket->getWaitingTicketFromDB($data['tickets_id']);
+            if (
+                $waiting
+                && !empty($waiting['date_report'])
+                && $waiting['date_report'] <= $today
+            ) {
+                $ticket->update([
+                    'id' => $data['tickets_id'],
+                    'status' => $waiting['status']
+                ]);
+                $waiting_ticket->update([
+                    'id' => $waiting['id'],
+                    'date_end_suspension' => date("Y-m-d H:i:s")
+                ]);
+                $cron_status = 1;
+                $task->addVolume(1);
+                if (Session::isCron()) {
+                    $log->history($data['tickets_id'], 'Ticket', [12, Ticket::WAITING, $waiting['status']]);
+                }
             }
-         }
-      }
-      return $cron_status;
-   }
+        }
+        return $cron_status;
+    }
 
-   // Cron action
-   /**
-    * @param $name
-    *
-    * @return array
-    */
-   static function cronInfo($name) {
+    // Cron action
+    /**
+     * @param $name
+     *
+     * @return array
+     */
+    static function cronInfo($name)
+    {
 
-      switch ($name) {
-         case 'MoreticketWaitingTicket':
-            return [
-               'description' => __("End of standby ticket", 'moreticket')];   // Optional
-            break;
-      }
-      return [];
-   }
+        switch ($name) {
+            case 'MoreticketWaitingTicket':
+                return [
+                    'description' => __("End of standby ticket", 'moreticket')
+                ];   // Optional
+                break;
+        }
+        return [];
+    }
 
 
-   /**
-    * Print the waiting ticket form
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *     - target filename : where to go when done.
-    *     - withtemplate boolean : template or basic item
-    *
-    * @return Nothing (display)
-    * */
-   function showQuestionSign($ID, $options = []) {
+    /**
+     * Print the waiting ticket form
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *     - target filename : where to go when done.
+     *     - withtemplate boolean : template or basic item
+     *
+     * @return Nothing (display)
+     * */
+    function showQuestionSign($ID, $options = [])
+    {
 
-      global $CFG_GLPI;
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
-      $ticket = new Ticket();
-      if ($ID > 0) {
+        global $CFG_GLPI;
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
+        $ticket = new Ticket();
+        if ($ID > 0) {
 
-         $ticket->getFromDB($ID);
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+            $ticket->getFromDB($ID);
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
+            }
+        } else {
+            // Create item
+            $ticket->getEmpty();
             $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $ticket->getEmpty();
-         $this->getEmpty();
-      }
+        }
 
 
 
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      echo "<div class='spaced' id='isQuestion' style=\"
+        echo "<div class='spaced' id='isQuestion' style=\"
              word-wrap: normal;
              white-space: normal;
              display: block;
@@ -798,30 +878,33 @@ class PluginMoreticketWaitingTicket extends CommonDBTM {
              text-align: center;
              margin-left: -50px;
          \">";
-      echo "</br>";
-      echo "<table class='moreticket_waiting_ticket' id='c2_menu'>";
-      echo "<tr><td>";
-      echo __('Ticket waiting',"moreticket");
-//      if ($config->mandatoryWaitingReason() == true) {
+        echo "</br>";
+        echo "<table class='moreticket_waiting_ticket' id='c2_menu'>";
+        echo "<tr><td>";
+        echo __('Ticket waiting', "moreticket");
+        //      if ($config->mandatoryWaitingReason() == true) {
 //         echo "&nbsp;:&nbsp;<span class='red'>*</span>&nbsp;";
 //      }
-      self::showSwitchField("question", 1);
+        self::showSwitchField("question", 1);
 
-      Ajax::updateItemOnEvent("question","fakeupdate",$CFG_GLPI["root_doc"].PLUGIN_MORETICKET_DIR_NOFULL."/ajax/updatestatus.php",["question"=>'__VALUE__',"status"=>$ticket->getField("status")]);
-      Ajax::updateItem("fakeupdate",$CFG_GLPI["root_doc"].PLUGIN_MORETICKET_DIR_NOFULL."/ajax/updatestatus.php",["question"=>'1',"status"=>$ticket->getField("status")]);
+        Ajax::updateItemOnEvent("question", "fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '__VALUE__', "status" => $ticket->getField("status")]);
+        Ajax::updateItem("fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '1', "status" => $ticket->getField("status")]);
 
-      echo "</td></tr>";
+        echo "</td></tr>";
 
-      echo "</table>";
-      echo "<div id='fakeupdate'></div>";
-      echo "</div>";
-   }
+        echo "</table>";
+        echo "<div id='fakeupdate'></div>";
+        echo "</div>";
+    }
 
-   function showSwitchField($name, $value) {
+    function showSwitchField($name, $value)
+    {
 
-      echo Html::hidden($name, ['id'    => $name,
-         'value' => $value]);
-      echo Html::scriptBlock("(function(){
+        echo Html::hidden($name, [
+            'id' => $name,
+            'value' => $value
+        ]);
+        echo Html::scriptBlock("(function(){
                              var toggleButton = $('.$name');
                              toggleButton.click(function() {
                              if ($(this).hasClass('fa-toggle-on')) {
@@ -843,241 +926,244 @@ class PluginMoreticketWaitingTicket extends CommonDBTM {
                                  }
                              });
                            })();");
-      if ($value == 1) {
-         echo "<a class=\"button\"><i class=\"$name fa-fw fas fa-2x fa-toggle-on enabled\"></i></a>";
-      } else {
-         echo "<a class=\"button\"><i class=\"$name fa-fw fas fa-2x fa-toggle-off disabled\"></i></a>";
-      }
-   }
+        if ($value == 1) {
+            echo "<a class=\"button\"><i class=\"$name fa-fw fas fa-2x fa-toggle-on enabled\"></i></a>";
+        } else {
+            echo "<a class=\"button\"><i class=\"$name fa-fw fas fa-2x fa-toggle-off disabled\"></i></a>";
+        }
+    }
 
-   /**
-    * Print the waiting ticket form for ITSM-NG v2 (Bootstrap-styled)
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *
-    * @return bool (display)
-    */
-   function showFormV2($ID, $options = []) {
+    /**
+     * Print the waiting ticket form for ITSM-NG v2 (Bootstrap-styled)
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *
+     * @return bool (display)
+     */
+    function showFormV2($ID, $options = [])
+    {
 
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
 
-      if ($ID > 0) {
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
-            $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $this->getEmpty();
-      }
-
-      // If values are saved in session we retrieve it
-      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
-         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
-            switch ($key) {
-               case 'reason':
-                  $this->fields[$key] = stripslashes($value);
-                  break;
-               default :
-                  $this->fields[$key] = $value;
-                  break;
+        if ($ID > 0) {
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
             }
-         }
-      }
-
-      unset($_SESSION['glpi_plugin_moreticket_waiting']);
-
-      $config = new PluginMoreticketConfig();
-
-      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket' style='display:none;'>";
-      echo "<div class='card mt-2 mb-2'>";
-      echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
-      echo "<div class='card-body'>";
-      echo "<div class='row'>";
-
-      // Reason field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
-      if ($config->mandatoryWaitingReason() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
-      echo "</div></label></div>";
-
-      // Waiting Type field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
-      if ($config->mandatoryWaitingType() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
-      Dropdown::show('PluginMoreticketWaitingType', $opt);
-      echo "</div></label></div>";
-
-      // Postponement date field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
-      if ($config->mandatoryReportDate() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      $date_value = $this->fields['date_report'] ?? '';
-      if (empty($date_value) || $date_value == 'NULL') {
-         $date_value = date("Y-m-d\\TH:i");
-      } else {
-         $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
-      }
-      echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
-      echo "</div></label></div>";
-
-      echo "</div>"; // .row
-      echo "</div>"; // .card-body
-      echo "</div>"; // .card
-      echo "</div>"; // .col-12
-
-      return true;
-   }
-
-   /**
-    * Print the waiting ticket form for followups in ITSM-NG v2 (Bootstrap-styled)
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *
-    * @return bool (display)
-    */
-   function showFormFollowupV2($ID, $options = []) {
-
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
-
-      if ($ID > 0) {
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+        } else {
+            // Create item
             $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $this->getEmpty();
-      }
+        }
 
-      // If values are saved in session we retrieve it
-      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
-         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
-            switch ($key) {
-               case 'reason':
-                  $this->fields[$key] = stripslashes($value);
-                  break;
-               default :
-                  $this->fields[$key] = $value;
-                  break;
+        // If values are saved in session we retrieve it
+        if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+            foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+                switch ($key) {
+                    case 'reason':
+                        $this->fields[$key] = stripslashes($value);
+                        break;
+                    default:
+                        $this->fields[$key] = $value;
+                        break;
+                }
             }
-         }
-      }
+        }
 
-      unset($_SESSION['glpi_plugin_moreticket_waiting']);
+        unset($_SESSION['glpi_plugin_moreticket_waiting']);
 
-      $config = new PluginMoreticketConfig();
+        $config = new PluginMoreticketConfig();
 
-      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket_followup' style='display:none;'>";
-      echo "<div class='card mt-2 mb-2'>";
-      echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
-      echo "<div class='card-body'>";
-      echo "<div class='row'>";
+        echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket' style='display:none;'>";
+        echo "<div class='card mt-2 mb-2'>";
+        echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
+        echo "<div class='card-body'>";
+        echo "<div class='row'>";
 
-      // Reason field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
-      if ($config->mandatoryWaitingReason() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
-      echo "</div></label></div>";
+        // Reason field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+        if ($config->mandatoryWaitingReason() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
+        echo "</div></label></div>";
 
-      // Waiting Type field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
-      if ($config->mandatoryWaitingType() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
-      Dropdown::show('PluginMoreticketWaitingType', $opt);
-      echo "</div></label></div>";
+        // Waiting Type field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+        if ($config->mandatoryWaitingType() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
+        Dropdown::show('PluginMoreticketWaitingType', $opt);
+        echo "</div></label></div>";
 
-      // Postponement date field
-      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
-      echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
-      if ($config->mandatoryReportDate() == true) {
-         echo "&nbsp;<span class='text-danger'>*</span>";
-      }
-      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
-      $date_value = $this->fields['date_report'] ?? '';
-      if (empty($date_value) || $date_value == 'NULL') {
-         $date_value = date("Y-m-d\\TH:i");
-      } else {
-         $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
-      }
-      echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
-      echo "</div></label></div>";
+        // Postponement date field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+        if ($config->mandatoryReportDate() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        $date_value = $this->fields['date_report'] ?? '';
+        if (empty($date_value) || $date_value == 'NULL') {
+            $date_value = date("Y-m-d\\TH:i");
+        } else {
+            $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
+        }
+        echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
+        echo "</div></label></div>";
 
-      echo "</div>"; // .row
-      echo "</div>"; // .card-body
-      echo "</div>"; // .card
-      echo "</div>"; // .col-12
+        echo "</div>"; // .row
+        echo "</div>"; // .card-body
+        echo "</div>"; // .card
+        echo "</div>"; // .col-12
 
-      return true;
-   }
+        return true;
+    }
 
-   /**
-    * Print the question sign form for ITSM-NG v2 (Bootstrap-styled)
-    *
-    * @param $ID integer ID of the item
-    * @param $options array
-    *
-    * @return bool (display)
-    */
-   function showQuestionSignV2($ID, $options = []) {
+    /**
+     * Print the waiting ticket form for followups in ITSM-NG v2 (Bootstrap-styled)
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *
+     * @return bool (display)
+     */
+    function showFormFollowupV2($ID, $options = [])
+    {
 
-      global $CFG_GLPI;
-      // validation des droits
-      if (!$this->canView()) {
-         return false;
-      }
-      $ticket = new Ticket();
-      if ($ID > 0) {
-         $ticket->getFromDB($ID);
-         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
+
+        if ($ID > 0) {
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
+            }
+        } else {
+            // Create item
             $this->getEmpty();
-         }
-      } else {
-         // Create item
-         $ticket->getEmpty();
-         $this->getEmpty();
-      }
+        }
 
-      $config = new PluginMoreticketConfig();
+        // If values are saved in session we retrieve it
+        if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+            foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+                switch ($key) {
+                    case 'reason':
+                        $this->fields[$key] = stripslashes($value);
+                        break;
+                    default:
+                        $this->fields[$key] = $value;
+                        break;
+                }
+            }
+        }
 
-      echo "<div class='col-12 col-md-12 col-lg-12' id='isQuestion' style='display:block; clear:both; text-align:center;'>";
-      echo "<div class='d-flex align-items-center justify-content-center mt-2'>";
-      echo "<span class='me-2'>" . __('Ticket waiting', "moreticket") . "</span>";
-      self::showSwitchField("question", 1);
+        unset($_SESSION['glpi_plugin_moreticket_waiting']);
 
-      Ajax::updateItemOnEvent("question", "fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '__VALUE__', "status" => $ticket->getField("status")]);
-      Ajax::updateItem("fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '1', "status" => $ticket->getField("status")]);
+        $config = new PluginMoreticketConfig();
 
-      echo "</div>";
-      echo "<div id='fakeupdate'></div>";
-      echo "</div>";
+        echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket_followup' style='display:none;'>";
+        echo "<div class='card mt-2 mb-2'>";
+        echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
+        echo "<div class='card-body'>";
+        echo "<div class='row'>";
 
-      return true;
-   }
+        // Reason field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+        if ($config->mandatoryWaitingReason() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
+        echo "</div></label></div>";
+
+        // Waiting Type field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+        if ($config->mandatoryWaitingType() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
+        Dropdown::show('PluginMoreticketWaitingType', $opt);
+        echo "</div></label></div>";
+
+        // Postponement date field
+        echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+        echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+        if ($config->mandatoryReportDate() == true) {
+            echo "&nbsp;<span class='text-danger'>*</span>";
+        }
+        echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+        $date_value = $this->fields['date_report'] ?? '';
+        if (empty($date_value) || $date_value == 'NULL') {
+            $date_value = date("Y-m-d\\TH:i");
+        } else {
+            $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
+        }
+        echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
+        echo "</div></label></div>";
+
+        echo "</div>"; // .row
+        echo "</div>"; // .card-body
+        echo "</div>"; // .card
+        echo "</div>"; // .col-12
+
+        return true;
+    }
+
+    /**
+     * Print the question sign form for ITSM-NG v2 (Bootstrap-styled)
+     *
+     * @param $ID integer ID of the item
+     * @param $options array
+     *
+     * @return bool (display)
+     */
+    function showQuestionSignV2($ID, $options = [])
+    {
+
+        global $CFG_GLPI;
+        // validation des droits
+        if (!$this->canView()) {
+            return false;
+        }
+        $ticket = new Ticket();
+        if ($ID > 0) {
+            $ticket->getFromDB($ID);
+            if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+                $this->getEmpty();
+            }
+        } else {
+            // Create item
+            $ticket->getEmpty();
+            $this->getEmpty();
+        }
+
+        $config = new PluginMoreticketConfig();
+
+        echo "<div class='col-12 col-md-12 col-lg-12' id='isQuestion' style='display:block; clear:both; text-align:center;'>";
+        echo "<div class='d-flex align-items-center justify-content-center mt-2'>";
+        echo "<span class='me-2'>" . __('Ticket waiting', "moreticket") . "</span>";
+        self::showSwitchField("question", 1);
+
+        Ajax::updateItemOnEvent("question", "fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '__VALUE__', "status" => $ticket->getField("status")]);
+        Ajax::updateItem("fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '1', "status" => $ticket->getField("status")]);
+
+        echo "</div>";
+        echo "<div id='fakeupdate'></div>";
+        echo "</div>";
+
+        return true;
+    }
 
 }
