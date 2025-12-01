@@ -163,6 +163,68 @@ class PluginMoreticketUrgencyTicket extends CommonDBTM {
    }
 
    /**
+    * Print the urgency ticket form for ITSM-NG v2 (Bootstrap-styled)
+    *
+    * @param $ID integer ID of the item
+    * @param $options array
+    *
+    * @return bool (display)
+    */
+   function showFormV2($ID, $options = []) {
+
+      // validation des droits
+      if (!$this->canView()) {
+         return false;
+      }
+
+      if ($ID > 0) {
+         if (!$this->fields = self::getUrgencyTicketFromDB($ID)) {
+            $this->getEmpty();
+         }
+      } else {
+         // Create item
+         $this->getEmpty();
+      }
+
+      // If values are saved in session we retrieve it
+      if (isset($_SESSION['glpi_plugin_moreticket_urgency'])) {
+         foreach ($_SESSION['glpi_plugin_moreticket_urgency'] as $key => $value) {
+            switch ($key) {
+               case 'justification':
+                  $this->fields[$key] = stripslashes($value);
+                  break;
+               default :
+                  $this->fields[$key] = $value;
+                  break;
+            }
+         }
+      }
+
+      unset($_SESSION['glpi_plugin_moreticket_urgency']);
+
+      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_urgency_ticket' style='display:none;'>";
+      echo "<div class='card mt-2 mb-2'>";
+      echo "<div class='card-header'>" . __('Urgency justification', 'moreticket') . "</div>";
+      echo "<div class='card-body'>";
+      echo "<div class='row'>";
+
+      // Justification field
+      echo "<div class='col-12 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Justification', 'moreticket');
+      echo "&nbsp;<span class='text-danger'>*</span>";
+      echo "<div class='d-flex flex-column w-100 input-group my-1'>";
+      echo "<textarea class='form-control' rows='3' name='justification'>" . Html::cleanInputText($this->fields['justification'] ?? '') . "</textarea>";
+      echo "</div></label></div>";
+
+      echo "</div>"; // .row
+      echo "</div>"; // .card-body
+      echo "</div>"; // .card
+      echo "</div>"; // .col-12
+
+      return true;
+   }
+
+   /**
     * Get last urgencyTicket
     *
     * @param       $tickets_id

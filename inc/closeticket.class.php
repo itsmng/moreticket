@@ -489,6 +489,102 @@ class PluginMoreticketCloseTicket extends CommonDBTM {
       echo "</div>";
    }
 
+   /**
+    * Print the close ticket form for ITSM-NG v2 (Bootstrap-styled)
+    *
+    * @param $ID integer ID of the item
+    * @param $options array
+    *
+    * @return bool (display)
+    */
+   function showFormV2($ID, $options = []) {
+      global $CFG_GLPI;
+
+      // validation des droits
+      if (!$this->canView()) {
+         return false;
+      }
+
+      $ticket = new Ticket();
+
+      if ($ID > 0) {
+         if (!$ticket->getFromDB($ID)) {
+            $ticket->getEmpty();
+         }
+      } else {
+         // Create item
+         $ticket->getEmpty();
+      }
+
+      // If values are saved in session we retrieve it
+      if (isset($_SESSION['glpi_plugin_moreticket_close'])) {
+         foreach ($_SESSION['glpi_plugin_moreticket_close'] as $key => $value) {
+            $ticket->fields[$key] = str_replace(['\r\n', '\r', '\n'], '', $value);
+         }
+      }
+
+      unset($_SESSION['glpi_plugin_moreticket_close']);
+
+      $config = new PluginMoreticketConfig();
+
+      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_close_ticket' style='display:none;'>";
+      echo "<div class='card mt-2 mb-2'>";
+      echo "<div class='card-header'>" . __('Close ticket informations', 'moreticket') . "</div>";
+      echo "<div class='card-body'>";
+      echo "<div class='row'>";
+
+      // Solution Template dropdown
+      $rand_template = mt_rand();
+      $rand_text     = mt_rand();
+      $rand_type     = mt_rand();
+
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . _n('Solution template', 'Solution templates', 1);
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      SolutionTemplate::dropdown(['value'  => 0,
+                                  'entity' => $ticket->getEntityID(),
+                                  'rand'   => $rand_template,
+                                  'toupdate'
+                                           => ['value_fieldname' => 'value',
+                                               'to_update' => 'solution' . $rand_text,
+                                               'url'       => $CFG_GLPI["root_doc"] . "/ajax/solution.php",
+                                               'moreparams' => ['type_id' => 'dropdown_solutiontypes_id' . $rand_type]]]);
+      echo "</div></label></div>";
+
+      // Solution Type dropdown
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . _n('Solution type', 'Solution types', 1);
+      if ($config->mandatorySolutionType() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      Dropdown::show('SolutionType',
+                     ['value'  => $ticket->getField('solutiontypes_id'),
+                      'rand'   => $rand_type,
+                      'entity' => $ticket->getEntityID()]);
+      echo "</div></label></div>";
+
+      // Solution description textarea
+      echo "<div class='col-12 col-md-12 col-lg-12 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Solution description', 'moreticket') . "&nbsp;<span class='text-danger'>*</span>";
+      echo "<div class='d-flex flex-column w-100 input-group my-1'>";
+      $rand = mt_rand();
+      Html::initEditorSystem("solution" . $rand);
+      if (!isset($ticket->fields['solution'])) {
+         $ticket->fields['solution'] = '';
+      }
+      echo "<div id='solution$rand_text'>";
+      echo "<textarea id='solution$rand' name='solution' class='form-control' rows='3'>" . stripslashes($ticket->fields['solution']) . "</textarea></div>";
+      echo "</div></label></div>";
+
+      echo "</div>"; // .row
+      echo "</div>"; // .card-body
+      echo "</div>"; // .card
+      echo "</div>"; // .col-12
+
+      return true;
+   }
+
    // Hook done on before add ticket - checkMandatory
    /**
     * @param $item

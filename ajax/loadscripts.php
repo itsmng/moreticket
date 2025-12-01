@@ -48,6 +48,9 @@ if (isset($_POST['action'])) {
          $urgency_ids           = $config->getUrgency_ids();
          $use_duration_solution = $config->useDurationSolution();
 
+         // Detect ITSM-NG v2 (version 2.x uses new Twig-based forms)
+         $isItsmV2 = defined('ITSM_VERSION') && version_compare(ITSM_VERSION, '2.0.0', '>=');
+
          $params = ['root_doc'        => $CFG_GLPI["root_doc"].PLUGIN_MORETICKET_DIR_NOFULL,
                          'waiting'         => CommonITILObject::WAITING,
                          'closed'          => CommonITILObject::CLOSED,
@@ -55,13 +58,19 @@ if (isset($_POST['action'])) {
                          'use_solution'    => $use_solution,
                          'use_question'    => $use_question,
                          'solution_status' => $solution_status,
-                         'glpilayout'      => $_SESSION['glpilayout'],
+                         'glpilayout'      => $_SESSION['glpilayout'] ?? 'classic',
                          'use_urgency'     => $use_urgency,
                          'urgency_ids'     => $urgency_ids,
                          'div_kb'          => Session::haveRight('knowbase', UPDATE)];
 
          echo "<script type='text/javascript'>";
-         echo "var moreticket = $(document).moreticket(" . json_encode($params) . ");";
+
+         // Initialize the appropriate JavaScript plugin based on version
+         if ($isItsmV2) {
+            echo "var moreticket = $(document).moreticket_v2(" . json_encode($params) . ");";
+         } else {
+            echo "var moreticket = $(document).moreticket(" . json_encode($params) . ");";
+         }
 
          if (Session::haveRight("plugin_moreticket", UPDATE)
             && ($config->useWaiting() == true || $config->useSolution() == true || $config->useQuestion() == true )) {

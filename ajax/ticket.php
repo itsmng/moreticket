@@ -57,6 +57,28 @@ if (isset($_POST['action'])) {
          }
          break;
 
+      case 'showFormV2':
+         $config = new PluginMoreticketConfig();
+
+         // Ticket is waiting
+         if ($config->useWaiting()) {
+            $waiting_ticket = new PluginMoreticketWaitingTicket();
+            $waiting_ticket->showFormV2($_POST['tickets_id']);
+         }
+
+         // Ticket is closed
+         if ($config->useSolution()) {
+            if (isset($_POST['type']) && $_POST['type'] == 'add') {
+               $close_ticket = new PluginMoreticketCloseTicket();
+               if (method_exists($close_ticket, 'showFormV2')) {
+                  $close_ticket->showFormV2($_POST['tickets_id']);
+               } else {
+                  $close_ticket->showForm($_POST['tickets_id']);
+               }
+            }
+         }
+         break;
+
       case 'showFormTicketTask':
          $config = new PluginMoreticketConfig();
 
@@ -71,6 +93,22 @@ if (isset($_POST['action'])) {
          }
 
          break;
+
+      case 'showFormFollowupV2':
+         $config = new PluginMoreticketConfig();
+
+         if($config->useQuestion()){
+            $waiting_ticket = new PluginMoreticketWaitingTicket();
+            $waiting_ticket->showQuestionSignV2($_POST['tickets_id']);
+         }
+         // Ticket is waiting
+         if ($config->useWaiting()) {
+            $waiting_ticket = new PluginMoreticketWaitingTicket();
+            $waiting_ticket->showFormFollowupV2($_POST['tickets_id']);
+         }
+
+         break;
+
       case 'showFormUrgency':
          $config = new PluginMoreticketConfig();
 
@@ -79,6 +117,20 @@ if (isset($_POST['action'])) {
          if ($config->useUrgency()) {
             $urgency_ticket = new PluginMoreticketUrgencyTicket();
             $urgency_ticket->showForm($_POST['tickets_id']);
+         }
+         break;
+
+      case 'showFormUrgencyV2':
+         $config = new PluginMoreticketConfig();
+
+         // Urgency ticket
+         if ($config->useUrgency()) {
+            $urgency_ticket = new PluginMoreticketUrgencyTicket();
+            if (method_exists($urgency_ticket, 'showFormV2')) {
+               $urgency_ticket->showFormV2($_POST['tickets_id']);
+            } else {
+               $urgency_ticket->showForm($_POST['tickets_id']);
+            }
          }
          break;
 

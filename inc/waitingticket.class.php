@@ -850,4 +850,234 @@ class PluginMoreticketWaitingTicket extends CommonDBTM {
       }
    }
 
+   /**
+    * Print the waiting ticket form for ITSM-NG v2 (Bootstrap-styled)
+    *
+    * @param $ID integer ID of the item
+    * @param $options array
+    *
+    * @return bool (display)
+    */
+   function showFormV2($ID, $options = []) {
+
+      // validation des droits
+      if (!$this->canView()) {
+         return false;
+      }
+
+      if ($ID > 0) {
+         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+            $this->getEmpty();
+         }
+      } else {
+         // Create item
+         $this->getEmpty();
+      }
+
+      // If values are saved in session we retrieve it
+      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+            switch ($key) {
+               case 'reason':
+                  $this->fields[$key] = stripslashes($value);
+                  break;
+               default :
+                  $this->fields[$key] = $value;
+                  break;
+            }
+         }
+      }
+
+      unset($_SESSION['glpi_plugin_moreticket_waiting']);
+
+      $config = new PluginMoreticketConfig();
+
+      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket' style='display:none;'>";
+      echo "<div class='card mt-2 mb-2'>";
+      echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
+      echo "<div class='card-body'>";
+      echo "<div class='row'>";
+
+      // Reason field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+      if ($config->mandatoryWaitingReason() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
+      echo "</div></label></div>";
+
+      // Waiting Type field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+      if ($config->mandatoryWaitingType() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
+      Dropdown::show('PluginMoreticketWaitingType', $opt);
+      echo "</div></label></div>";
+
+      // Postponement date field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+      if ($config->mandatoryReportDate() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      $date_value = $this->fields['date_report'] ?? '';
+      if (empty($date_value) || $date_value == 'NULL') {
+         $date_value = date("Y-m-d\\TH:i");
+      } else {
+         $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
+      }
+      echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
+      echo "</div></label></div>";
+
+      echo "</div>"; // .row
+      echo "</div>"; // .card-body
+      echo "</div>"; // .card
+      echo "</div>"; // .col-12
+
+      return true;
+   }
+
+   /**
+    * Print the waiting ticket form for followups in ITSM-NG v2 (Bootstrap-styled)
+    *
+    * @param $ID integer ID of the item
+    * @param $options array
+    *
+    * @return bool (display)
+    */
+   function showFormFollowupV2($ID, $options = []) {
+
+      // validation des droits
+      if (!$this->canView()) {
+         return false;
+      }
+
+      if ($ID > 0) {
+         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+            $this->getEmpty();
+         }
+      } else {
+         // Create item
+         $this->getEmpty();
+      }
+
+      // If values are saved in session we retrieve it
+      if (isset($_SESSION['glpi_plugin_moreticket_waiting'])) {
+         foreach ($_SESSION['glpi_plugin_moreticket_waiting'] as $key => $value) {
+            switch ($key) {
+               case 'reason':
+                  $this->fields[$key] = stripslashes($value);
+                  break;
+               default :
+                  $this->fields[$key] = $value;
+                  break;
+            }
+         }
+      }
+
+      unset($_SESSION['glpi_plugin_moreticket_waiting']);
+
+      $config = new PluginMoreticketConfig();
+
+      echo "<div class='col-12 col-md-12 col-lg-12' id='moreticket_waiting_ticket_followup' style='display:none;'>";
+      echo "<div class='card mt-2 mb-2'>";
+      echo "<div class='card-header'>" . __('Waiting ticket information', 'moreticket') . "</div>";
+      echo "<div class='card-body'>";
+      echo "<div class='row'>";
+
+      // Reason field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Reason', 'moreticket');
+      if ($config->mandatoryWaitingReason() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      echo "<input type='text' class='form-control' name='reason' value='" . Html::cleanInputText($this->fields['reason'] ?? '') . "' />";
+      echo "</div></label></div>";
+
+      // Waiting Type field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . PluginMoreticketWaitingType::getTypeName(1);
+      if ($config->mandatoryWaitingType() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      $opt = ['value' => $this->fields['plugin_moreticket_waitingtypes_id'] ?? 0];
+      Dropdown::show('PluginMoreticketWaitingType', $opt);
+      echo "</div></label></div>";
+
+      // Postponement date field
+      echo "<div class='col-12 col-md-6 col-lg-4 text-start'>";
+      echo "<label class='form-label w-100'>" . __('Postponement date', 'moreticket');
+      if ($config->mandatoryReportDate() == true) {
+         echo "&nbsp;<span class='text-danger'>*</span>";
+      }
+      echo "<div class='d-flex flex-nowrap w-100 align-items-center input-group my-1'>";
+      $date_value = $this->fields['date_report'] ?? '';
+      if (empty($date_value) || $date_value == 'NULL') {
+         $date_value = date("Y-m-d\\TH:i");
+      } else {
+         $date_value = date("Y-m-d\\TH:i", strtotime($date_value));
+      }
+      echo "<input type='datetime-local' class='form-control' name='date_report' value='" . $date_value . "' />";
+      echo "</div></label></div>";
+
+      echo "</div>"; // .row
+      echo "</div>"; // .card-body
+      echo "</div>"; // .card
+      echo "</div>"; // .col-12
+
+      return true;
+   }
+
+   /**
+    * Print the question sign form for ITSM-NG v2 (Bootstrap-styled)
+    *
+    * @param $ID integer ID of the item
+    * @param $options array
+    *
+    * @return bool (display)
+    */
+   function showQuestionSignV2($ID, $options = []) {
+
+      global $CFG_GLPI;
+      // validation des droits
+      if (!$this->canView()) {
+         return false;
+      }
+      $ticket = new Ticket();
+      if ($ID > 0) {
+         $ticket->getFromDB($ID);
+         if (!$this->fields = self::getWaitingTicketFromDB($ID)) {
+            $this->getEmpty();
+         }
+      } else {
+         // Create item
+         $ticket->getEmpty();
+         $this->getEmpty();
+      }
+
+      $config = new PluginMoreticketConfig();
+
+      echo "<div class='col-12 col-md-12 col-lg-12' id='isQuestion' style='display:block; clear:both; text-align:center;'>";
+      echo "<div class='d-flex align-items-center justify-content-center mt-2'>";
+      echo "<span class='me-2'>" . __('Ticket waiting', "moreticket") . "</span>";
+      self::showSwitchField("question", 1);
+
+      Ajax::updateItemOnEvent("question", "fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '__VALUE__', "status" => $ticket->getField("status")]);
+      Ajax::updateItem("fakeupdate", $CFG_GLPI["root_doc"] . PLUGIN_MORETICKET_DIR_NOFULL . "/ajax/updatestatus.php", ["question" => '1', "status" => $ticket->getField("status")]);
+
+      echo "</div>";
+      echo "<div id='fakeupdate'></div>";
+      echo "</div>";
+
+      return true;
+   }
+
 }

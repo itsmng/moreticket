@@ -27,7 +27,7 @@
  --------------------------------------------------------------------------
  */
 
-define('PLUGIN_MORETICKET_VERSION', '1.6.2');
+define('PLUGIN_MORETICKET_VERSION', '2.0.0');
 
 if (!defined("PLUGIN_MORETICKET_DIR")) {
    define("PLUGIN_MORETICKET_DIR", Plugin::getPhpDir("moreticket"));
@@ -47,7 +47,14 @@ function plugin_init_moreticket() {
       if (class_exists('PluginMoreticketProfile')) { // only if plugin activated
          $config = new PluginMoreticketConfig();
 
-         $PLUGIN_HOOKS['add_javascript']['moreticket'] = ["scripts/moreticket.js"];
+         $isItsmV2 = defined('ITSM_VERSION') && version_compare(ITSM_VERSION, '2.0.0', '>=');
+
+         // Load appropriate JavaScript based on ITSM-NG version
+         if ($isItsmV2) {
+            $PLUGIN_HOOKS['add_javascript']['moreticket'] = ["scripts/moreticket_v2.js"];
+         } else {
+            $PLUGIN_HOOKS['add_javascript']['moreticket'] = ["scripts/moreticket.js"];
+         }
 
          if ($config->useDurationSolution() == true) {
 
