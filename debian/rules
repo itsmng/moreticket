@@ -24,7 +24,6 @@ override_dh_auto_install:
                 ! -name tools \
                 ! -name README.md \
 		! -name composer.json \
-		! -name composer.lock \
 		-exec cp -a {} usr/share/itsm-ng/plugins/$(NAME)/ \;
 
 override_dh_gencontrol:
