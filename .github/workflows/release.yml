@@ -19,7 +19,6 @@ jobs:
       - name: Build project
         run: |
           cd /home/runner/work/moreticket/
-          cd moreticket && composer install --no-dev && cd ..
           rm -rf moreticket/.git* moreticket/.atoum.php moreticket/debian moreticket/tests moreticket/tools moreticket/README.md moreticket/composer.json
           tar -zcvf moreticket-${{ github.ref_name }}.tgz moreticket
 
