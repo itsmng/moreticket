@@ -1,0 +1,13 @@
+Source: moreticket
+Section: web
+Priority: standard
+Maintainer: ITSMng SysAdmin <sysadmin@itsm-ng.com>
+Build-Depends:	debhelper (>= 9),
+		composer
+Rules-Requires-Root: no
+Homepage: https://github.com/itsmng/moreticket
+
+Package: itsm-ng-plugin-moreticket
+Architecture: all
+Depends: itsm-ng (>= 1:2.0),
+Description: This plugin allows you to add a Timeline tab on tickets
